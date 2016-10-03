@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "co": "^4.6.0",
+    "co-foreach": "^1.1.1",
+    "co-fs": "^1.2.0",
+    "co-gm": "^0.1.0",
+    "moment": "2.3.x",
+    "rimraf": "^2.5.4",
+    "typogr": "0.5.x",
+    "underscore": "1.4.x"
+  },
+  "private": "true"
+}
