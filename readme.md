@@ -54,7 +54,8 @@ Step 1: Create a `config.json` file like so:
 
 Step 2: put a logo at `contents/logo.png`  
 Step 4: create a directory `raw_articles` and write your blog.  
-Step 5: install all dependencies with:
+Step 5: Add a file called `contents/about.md` and fill it with markdown.  
+Step 6: install all dependencies with:
 
     npm install
     npm install -g wintersmith
@@ -63,7 +64,7 @@ Step 5: install all dependencies with:
     brew install imagemagick
     brew install graphicsmagick
 
-Step 6: check out your blog:
+Step 7: check out your blog:
 
     node convertContent
     wintersmith preview
