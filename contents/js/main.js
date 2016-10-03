@@ -1,3 +1,6 @@
+console.log('Interested in this blog? It\'s open source!');
+console.log('https://github.com/askmike/mijnrealiteit-photoblog');
+
 // 			GA
 var _gaq=[["_setAccount",window.gacode],["_setDomainName",window.domain],["_trackPageview"]];(function(e,a){var o=e.createElement(a),t=e.getElementsByTagName(a)[0];o.src=("https:"==location.protocol?"//ssl":"//www")+".google-analytics.com/ga.js",t.parentNode.insertBefore(o,t)})(document,"script");
 
