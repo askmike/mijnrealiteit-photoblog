@@ -69,6 +69,11 @@ Step 7: check out your blog:
     node convertContent
     wintersmith preview
 
+Step 8: build your website
+
+    wintersmith build
+    # now put the build folder on a webserver!
+
 ## License
 
 The MIT License (MIT)
