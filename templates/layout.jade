@@ -1,6 +1,11 @@
 //
-    Interested in this blog? It's open source!
-    https://github.com/askmike/mijnrealiteit-photoblog
+    |
+    |
+    | Interested in a blog like this? It's open source!
+    | 
+    | https://github.com/askmike/mijnrealiteit-photoblog
+    |
+    |
 doctype html
 block vars
 html(lang='en')
@@ -29,6 +34,8 @@ html(lang='en')
              - var a = _.keys(article)
              li
                a(href=article.url)=article.title
+        p
+          em That's all folks.
     #main
       #content
         block content

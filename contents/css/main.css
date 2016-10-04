@@ -1,21 +1,35 @@
+/* BEGIN Regular */
 @font-face {
-    font-family: 'droid_sansregular';
-    src: url('/fonts/droidsans-webfont.woff2') format('woff2'),
-         url('/fonts/droidsans-webfont.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-}
-
+  font-family: Roboto;
+  src: url("/fonts/Roboto-Regular.woff2?v=1.1.0") format("woff2"), url("/fonts/Roboto-Regular.woff?v=1.1.0") format("woff"), url("/fonts/Roboto-Regular.ttf?v=1.1.0") format("truetype");
+  font-weight: 400;
+  font-style: normal; }
 @font-face {
-    font-family: 'droid_sansbold';
-    src: url('/fonts/droidsans-bold-webfont.woff2') format('woff2'),
-         url('/fonts/droidsans-bold-webfont.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-}
+  font-family: Roboto;
+  src: url("/fonts/Roboto-Regular.woff2?v=1.1.0") format("woff2"), url("/fonts/Roboto-Regular.woff?v=1.1.0") format("woff"), url("/fonts/Roboto-Regular.ttf?v=1.1.0") format("truetype");
+  font-weight: normal;
+  font-style: normal; }
+/* END Regular */
 
-h1, h2, h3, h4, strong {
-  font-family: 'droid_sansbold', sans-serif;
+/* BEGIN Bold */
+@font-face {
+  font-family: Roboto;
+  src: url("/fonts/Roboto-Bold.woff2?v=1.1.0") format("woff2"), url("/fonts/Roboto-Bold.woff?v=1.1.0") format("woff"), url("/fonts/Roboto-Bold.ttf?v=1.1.0") format("truetype");
+  font-weight: 700;
+  font-style: normal; }
+@font-face {
+  font-family: Roboto;
+  src: url("/fonts/Roboto-Bold.woff2?v=1.1.0") format("woff2"), url("/fonts/Roboto-Bold.woff?v=1.1.0") format("woff"), url("/fonts/Roboto-Bold.ttf?v=1.1.0") format("truetype");
+  font-weight: bold;
+  font-style: normal; }
+/* END Bold */
+
+body {
+  font-family: Roboto, sans-serif;
+  color: #333333;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
 }
 
 h1 {
@@ -24,16 +38,16 @@ h1 {
 
 a {
   text-decoration: none;
+  color: #999999;
 }
 
-body {
-  font-family: 'droid_sansregular', sans-serif;
-  margin: 0;
-  padding: 0;
+a:hover {
+  color:inherit;
 }
 
 #sidebar h2 {
   margin-top: 0;
+  color: #333333;
 }
 
 #sidebar header {
@@ -55,7 +69,6 @@ body {
   position: relative;
   width: 180px;
   float: left;
-  background-color: #fafafa;
   min-height: 100%;
 }
 
@@ -64,7 +77,6 @@ body {
 }
 
 #main {
-  border-left: 1px solid #eee;
   float: left;
   width: 1100px;
 }
@@ -79,6 +91,7 @@ nav ul {
 
 nav li {
   list-style-type: none;
+  line-height: 1.8;
 }
 
 .article img {
@@ -101,6 +114,10 @@ nav li {
 
 .home .about {
   padding: 100px 10px 0 10px;
+}
+
+.left img {
+  max-width: 100%;
 }
 
 #content {
@@ -184,6 +201,11 @@ nav li {
     float: left;
   }
 
+  #sidebar p {
+    clear: both;
+    text-align: center;
+  }
+
   #content {
     padding-left: 0;
   }
@@ -193,7 +215,8 @@ nav li {
   #content ul,
   #content ol,
   #content blockquote,
-  #content pre {
+  #content pre,
+  #content h2 {
     padding: 0 10px;
   }
 
@@ -202,8 +225,16 @@ nav li {
     font-size: 1.5em;
   }
 
+  .left {
+    width: 100%;
+  }
+
   .left img {
-    max-width: 100%;
+    display: none;
+  }
+
+  .home .about {
+    padding: 0;
   }
 
 }

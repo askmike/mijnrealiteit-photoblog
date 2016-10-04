@@ -1,4 +1,4 @@
-console.log('Interested in this blog? It\'s open source!');
+console.log('Interested in a blog like this? It\'s open source!');
 console.log('https://github.com/askmike/mijnrealiteit-photoblog');
 
 // 			GA
