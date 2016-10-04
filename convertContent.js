@@ -18,17 +18,18 @@ co(function *() {
 
   console.log('found', articles.length, 'articles...');
 
+  // for every post
   yield forEach(articles, function * (article) {
     var isDir = (yield fs.stat(FROM + article)).isDirectory();
 
     if(!isDir)
-      return;
+      return; // it's not really a post
 
     var content = yield fs.readdir(FROM + article);
     content = content.filter(i => i !== '.DS_Store');
 
     if(!_.find(content, c => c === 'index.md'))
-      return;
+      return; // it's not really a post
 
     // we have a post!
 
@@ -36,7 +37,10 @@ co(function *() {
     if(!(yield fs.exists(TO + article)))
       fs.mkdir(TO + article);
 
+    console.log('converting', article);
+
     // write post data
+    console.log('\tcopying', article + '/index.md');
     var index = yield fs.readFile(FROM + article + '/index.md');
     yield fs.writeFile(TO + article + '/index.md', index);
     
@@ -45,17 +49,18 @@ co(function *() {
     yield forEach(pics, function *(picName) {
       var doneAlready = yield fs.exists(TO + article + '/' + picName)
       if(doneAlready)
-        return console.log('skipping', article + '/' + picName);
+        return console.log('\tSKIPPING', article + '/' + picName);
 
       var stats = yield gm(FROM + article + '/' + picName).identify()
       if(stats.size.width < 1100) {
         // normal copy
+        console.log('\tCOPYING', article, picName);
         yield gm(FROM + article + '/' + picName)
           .noProfile()
           .write(TO + article + '/' + picName);
       } else {
         // resize
-        console.log('RESIZING', article, picName);
+        console.log('\tRESIZING', article, picName);
         yield gm(FROM + article + '/' + picName)
           .noProfile()
           .resize(1100)
