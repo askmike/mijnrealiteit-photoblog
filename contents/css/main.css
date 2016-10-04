@@ -103,23 +103,6 @@ nav li {
   color: #8c8c8c
 }
 
-.left {
-  width: 50%;
-  float: left;
-}
-
-.home .left {
-  padding-top: 50px;
-}
-
-.home .about {
-  padding: 100px 10px 0 10px;
-}
-
-.left img {
-  max-width: 100%;
-}
-
 #content {
   padding-left: 15px;
   width: 100%;
@@ -220,21 +203,13 @@ nav li {
     padding: 0 10px;
   }
 
+  #content .fig {
+    text-align: center;
+  }
+
   #content h1 {
     text-align: center;
     font-size: 1.5em;
-  }
-
-  .left {
-    width: 100%;
-  }
-
-  .left img {
-    display: none;
-  }
-
-  .home .about {
-    padding: 0;
   }
 
 }

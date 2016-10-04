@@ -1,9 +1,5 @@
 extends layout
 
 block content
-  section.home
-    .left
-        .about
-            !=contents['about.md'].html
-    .left
-        img(src='/static/me.jpg')
+  article.article
+    section.content!= typogr(contents['about.md'].html).typogrify()

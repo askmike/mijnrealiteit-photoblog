@@ -10,6 +10,8 @@ $(function() {
   $('.content').children().each(function() {
     if($(this).text().length > 1)
       $(this).addClass('text');
+    else
+      $(this).addClass('fig');
   });
 
   var fixed = false;
