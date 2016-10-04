@@ -8,12 +8,22 @@ The idea is simple: if have a directory structure like so:
     	- index.md
     	- picture1.jpg
     	- picture2.jpg
-    /hello-world/
-    	- index.md
-    	- picture1.jpg
-    	- picture2.jpg
 
-you'll get a blog with 2 posts.
+*index.md*:
+
+    ---
+    title: Hello World
+    date: 2015-07-09
+    template: article.jade
+    ---
+
+    in the land of the blind, the one-eyed man is king
+
+    ![an image of x](picture1.jpg)
+
+    ![an image of y](picture2.jpg)
+
+you'll get a blog with a post!
 
 All the static blog stuff happens by wintersmith, this repo therefor only contains:
 
