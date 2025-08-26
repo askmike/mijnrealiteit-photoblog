@@ -1,0 +1,46 @@
+//
+    |
+    |
+    | Interested in a blog like this? It's open source!
+    | 
+    | https://github.com/askmike/mijnrealiteit-photoblog
+    |
+    |
+doctype html
+block vars
+html(lang='en')
+  head
+    block head
+      meta(charset='utf-8')
+      meta(http-equiv='X-UA-Compatible', content='IE=edge,chrome=1')
+      meta(name='viewport', content='width=device-width')
+      title
+        block title
+          = locals.name
+      link(rel='alternate', href=locals.url+'feed.xml', type='application/rss+xml', title=locals.description)
+      link(rel='stylesheet', href=contents.css['main.css'].url)
+  body(class=bodyclass)
+    #sidebar
+      #innerSidebar
+        header
+          a(href='/')
+            img(src=locals.logo)
+          a(href='/')
+            h2= locals.name
+        nav
+          ul
+            - var articles = env.helpers.getArticles(contents)
+            each article in articles
+             - var a = _.keys(article)
+             li
+               a(href=article.url)=article.title
+        p
+          em That's all folks.
+    #main
+      #content
+        block content
+  script.
+    window.gacode = "#{locals.gacode}"
+    window.domain = "#{locals.domain}"
+  script(type='text/javascript' src=contents.js['jquery.min.js'].url)
+  script(type='text/javascript' src=contents.js['main.js'].url)

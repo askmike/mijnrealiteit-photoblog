@@ -1,0 +1,5 @@
+extends layout
+
+block content
+  article.article
+    section.content!= typogr(contents['about.md'].html).typogrify()
