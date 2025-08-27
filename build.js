@@ -30,7 +30,6 @@ const config = {
     owner: 'Mike van Rossum',
     description: 'Photoblog',
     logo: '/static/logo.svg',
-    gacode: 'UA-19313599-3',
     domain: 'mijnrealiteit.nl'
 };
 
