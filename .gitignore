@@ -28,7 +28,7 @@ dwsync.xml
 
 # Komodo
 *.komodoproject
-.komodotools
+*.komodotools
 
 # Espresso
 *.esproj
@@ -40,6 +40,7 @@ node_modules
 TMP_*
 .idea
 
+static
 raw_articles
 config.json
 contents/static
@@ -47,3 +48,4 @@ contents/favicon.ico
 build
 contents/articles
 contents/about.md
+up.sh

@@ -1,88 +1,97 @@
 # Mijnrealiteit Photoblog
 
-This is all the code behind my photoblog [mijnrealiteit](https://mijnrealiteit.nl).
+This is the code behind my photoblog [mijnrealiteit](https://mijnrealiteit.nl).
 
-The idea is simple: if have a directory structure like so:
+## How It Works
 
-    /hello-world/
-    	- index.md
-    	- picture1.jpg
-    	- picture2.jpg
+The photoblog uses a simple static site generator built with plain JavaScript. Here's how it works:
 
-*index.md*:
+### Directory Structure
+```
+/raw_articles/
+    /my-post/
+        - index.md          # Markdown content with front matter
+        - image1.jpg        # High-resolution images
+        - image2.jpg
 
-    ---
-    title: Hello World
-    date: 2015-07-09
-    template: article.jade
-    ---
+/contents/                  # Processed images and assets
+/build/                     # Final built website
+```
 
-    in the land of the blind, the one-eyed man is king
+### Article Format
+Each article is a directory with an `index.md` file:
 
-    ![an image of x](picture1.jpg)
+```markdown
+---
+title: My Post Title
+date: 2023-12-01
+---
 
-    ![an image of y](picture2.jpg)
+Here's my article content with **markdown** support.
 
-you'll get a blog with a post!
+![description](image1.jpg)
+```
 
-All the static blog stuff happens by wintersmith, this repo therefor only contains:
+## Setup and Usage
 
-- A wintersmith photoblog theme.
-- A small script that uses imagemagick to convert all images into smaller versions.
+### 1. Install Dependencies
+```bash
+npm install
+```
 
-## Creating a blog
+### 2. Build the Site
+```bash
+npm run build
+```
 
-Step 1: Create a `config.json` file like so:
+This processes all markdown files and generates a complete static website in the `build/` directory.
 
-	{
-	  "locals": {
-	    "url": "https://example.com/",
-	    "name": "Your blog",
-	    "owner": "Your name",
-	    "description": "description",
-	    "logo": "/logo.png",
-	    "gacode": "your-ga-code",
-	    "domain": "example.com"
-	  },
-	  "plugins": [
-	    "./node_modules/wintersmith-articles-helper/"
-	  ],
-	  "require": {
-	    "moment": "moment",
-	    "_": "underscore",
-	    "typogr": "typogr"
-	  },
-	  "jade": {
-	    "pretty": true
-	  },
-	  "markdown": {
-	    "smartLists": true,
-	    "smartypants": true
-	  },
-	  "ignore": ["**/.DS_Store"]
-	}
+### 3. Preview Locally
+```bash
+# Install http-server globally
+npm install -g http-server
 
-Step 2: put a logo at `contents/logo.png`  
-Step 4: create a directory `raw_articles` and write your blog.  
-Step 5: Add a file called `contents/about.md` and fill it with markdown.  
-Step 6: install all dependencies with:
+# Serve the build directory
+http-server build
+```
 
-    npm install
-    npm install -g wintersmith
-    
-    # note this is MacOS specific:
-    brew install imagemagick
-    brew install graphicsmagick
+### 4. Deploy
+```bash
+./up.sh
+```
 
-Step 7: check out your blog:
+This runs the full pipeline: image processing → build → deploy.
 
-    node convertContent
-    wintersmith preview
+## Image Processing
 
-Step 8: build your website
+The system automatically processes images:
+- High-resolution images from `raw_articles/` are resized and optimized
+- Images wider than 1100px are automatically resized
+- Processed images are stored in `contents/articles/`
 
-    wintersmith build
-    # now put the build folder on a webserver!
+## File Structure
+
+- `raw_articles/` - Source markdown files and high-res images
+- `contents/` - Processed images and assets
+- `build/` - Final built website
+- `build.js` - Main build script
+- `convertContent.js` - Image processing script
+
+## Adding New Articles
+
+1. Create a new directory in `raw_articles/`
+2. Add `index.md` with front matter (title, date)
+3. Add your images
+4. Run `npm run build` to rebuild
+5. Run `http-server build` to preview locally
+
+## Configuration
+
+Edit the `config` object in `build.js` to change:
+- Site URL
+- Site name
+- Google Analytics code
+- Domain settings
 
 ## License
 
