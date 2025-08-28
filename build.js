@@ -110,7 +110,36 @@ function copyStaticAssets() {
 }
 
 // Generate HTML for the main layout
-function generateLayout(title, content, bodyClass = '', canonicalUrl = '') {
+function generateLayout(title, content, bodyClass = '', canonicalUrl = '', socialMeta = {}) {
+    // Default social media metadata
+    const defaultMeta = {
+        title: title,
+        description: config.description,
+        image: config.logo,
+        url: canonicalUrl || config.url,
+        type: 'website',
+        siteName: config.name
+    };
+    
+    // Merge with provided social media metadata
+    const meta = { ...defaultMeta, ...socialMeta };
+    
+    // Generate Open Graph and Twitter meta tags
+    const socialMetaTags = `
+    <meta property="og:type" content="${meta.type}">
+    <meta property="og:url" content="${meta.url}">
+    <meta property="og:title" content="${meta.title}">
+    <meta property="og:description" content="${meta.description}">
+    <meta property="og:image" content="${meta.image.startsWith('http') ? meta.image : (meta.type === 'article' ? meta.url + meta.image : config.url + meta.image.replace(/^\//, ''))}">
+    <meta property="og:site_name" content="${meta.siteName}">
+    <meta property="og:locale" content="en_US">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="${meta.url}">
+    <meta property="twitter:title" content="${meta.title}">
+    <meta property="twitter:description" content="${meta.description}">
+    <meta property="twitter:image" content="${meta.image.startsWith('http') ? meta.image : (meta.type === 'article' ? meta.url + meta.image : config.url + meta.image.replace(/^\//, ''))}">`;
+    
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -119,8 +148,9 @@ function generateLayout(title, content, bodyClass = '', canonicalUrl = '') {
     <meta name="viewport" content="width=device-width">
     <title>${title}</title>
     <link rel="alternate" href="${config.url}feed.xml" type="application/rss+xml" title="${config.description}">
-    ${canonicalUrl ? `<link rel=\"canonical\" href=\"${canonicalUrl}\">` : ''}
+    ${canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}">` : ''}
     <link rel="stylesheet" href="/css/${cssFilename}">
+    ${socialMetaTags}
 </head>
 <body${bodyClass ? ` class="${bodyClass}"` : ''}>
     <header id="site-header">
@@ -143,6 +173,24 @@ function generateLayout(title, content, bodyClass = '', canonicalUrl = '') {
 
 </body>
 </html>`;
+}
+
+// Extract the first image that appears in markdown content
+function extractFirstImageFromMarkdown(markdownContent) {
+    // Look for markdown image syntax: ![alt text](image.jpg)
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    const matches = [];
+    let match;
+    
+    while ((match = imageRegex.exec(markdownContent)) !== null) {
+        matches.push({
+            alt: match[1],
+            filename: match[2]
+        });
+    }
+    
+    // Return the first image found, or null if none
+    return matches.length > 0 ? matches[0].filename : null;
 }
 
 // Generate navigation from articles
@@ -259,7 +307,13 @@ function buildMainPage() {
                 </nav>
             </section>
         </article>`;
-    const html = generateLayout(config.name, mainContent, '', `${config.url}`);
+    const html = generateLayout(config.name, mainContent, '', `${config.url}`, {
+        title: config.name,
+        description: config.description,
+        image: config.logo,
+        type: 'website',
+        url: config.url
+    });
     
     fs.writeFileSync(path.join(BUILD, 'index.html'), html);
 }
@@ -312,7 +366,28 @@ async function buildArticles() {
         // Apply typography improvements
         const finalContent = typogr.typogrify(withTextClasses);
         
-        // Generate article HTML
+        // Process and copy article images
+        const articleDir = path.join(RAW_ARTICLES, article.slug);
+        const files = fs.readdirSync(articleDir);
+        const imageFiles = files.filter(file => 
+            file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.png') || file.endsWith('.gif')
+        );
+        
+        // Extract first image from markdown content for social media
+        const firstImageFromContent = extractFirstImageFromMarkdown(body);
+        const firstImage = firstImageFromContent || (imageFiles.length > 0 ? imageFiles[0] : null);
+        
+        // Create social media metadata
+        const socialMeta = {
+            slug: article.slug,
+            title: article.title,
+            description: article.title, // You could extract a description from the content if needed
+            image: firstImage,
+            type: 'article',
+            url: `${config.url}articles/${article.slug}/`
+        };
+        
+        // Generate article HTML with social media metadata
         const articleContent = `
             <h1 class="text">${article.title}</h1>
             <p class="date text">${article.date.format('MMMM DD, YYYY')}</p>
@@ -326,7 +401,7 @@ async function buildArticles() {
             </footer>
         `;
         
-        const html = generateLayout(`${article.title} - ${config.name}`, articleContent, 'article-detail', `${config.url}articles/${article.slug}/`);
+        const html = generateLayout(`${article.title} - ${config.name}`, articleContent, 'article-detail', `${config.url}articles/${article.slug}/`, socialMeta);
         
         // Create article directory in build
         const articleBuildDir = path.join(BUILD, 'articles', article.slug);
@@ -338,12 +413,6 @@ async function buildArticles() {
         fs.writeFileSync(path.join(articleBuildDir, 'index.html'), html);
         
         // Process and copy article images
-        const articleDir = path.join(RAW_ARTICLES, article.slug);
-        const files = fs.readdirSync(articleDir);
-        const imageFiles = files.filter(file => 
-            file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.png') || file.endsWith('.gif')
-        );
-        
         for (const imageFile of imageFiles) {
             const sourcePath = path.join(articleDir, imageFile);
             const destPath = path.join(articleBuildDir, imageFile);
