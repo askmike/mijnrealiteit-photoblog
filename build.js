@@ -193,6 +193,40 @@ function extractFirstImageFromMarkdown(markdownContent) {
     return matches.length > 0 ? matches[0].filename : null;
 }
 
+// Extract description from markdown content
+function extractDescriptionFromMarkdown(markdownContent, title) {
+    // Remove markdown syntax and HTML tags
+    let cleanContent = markdownContent
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '') // Remove image syntax
+        .replace(/<[^>]*>/g, '') // Remove HTML tags
+        .replace(/\n+/g, ' ') // Replace newlines with spaces
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+    
+    // Find the first meaningful paragraph (skip empty or very short content)
+    const sentences = cleanContent.split(/[.!?]+/).filter(s => s.trim().length > 10);
+    
+    if (sentences.length > 0) {
+        // Take the first meaningful sentence and clean it up
+        let description = sentences[0].trim();
+        
+        // If description is too short, try to combine with second sentence
+        if (description.length < 50 && sentences.length > 1) {
+            description += '. ' + sentences[1].trim();
+        }
+        
+        // Ensure description isn't too long (optimal for social media)
+        if (description.length > 200) {
+            description = description.substring(0, 197) + '...';
+        }
+        
+        return description;
+    }
+    
+    // Fallback: return title if no meaningful content found
+    return title;
+}
+
 // Generate navigation from articles
 function generateNavigation() {
     const articles = getArticles();
@@ -377,11 +411,14 @@ async function buildArticles() {
         const firstImageFromContent = extractFirstImageFromMarkdown(body);
         const firstImage = firstImageFromContent || (imageFiles.length > 0 ? imageFiles[0] : null);
         
+        // Extract description from markdown content
+        const description = extractDescriptionFromMarkdown(body, article.title);
+        
         // Create social media metadata
         const socialMeta = {
             slug: article.slug,
             title: article.title,
-            description: article.title, // You could extract a description from the content if needed
+            description: description,
             image: firstImage,
             type: 'article',
             url: `${config.url}articles/${article.slug}/`
