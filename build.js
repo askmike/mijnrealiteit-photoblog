@@ -28,7 +28,7 @@ const config = {
     url: 'https://mijnrealiteit.nl/',
     name: 'mijnrealiteit',
     owner: 'Mike van Rossum',
-    description: 'Photoblog',
+    description: 'Mike \'s Photoblog',
     logo: '/static/logo.svg',
     domain: 'mijnrealiteit.nl'
 };
@@ -155,7 +155,7 @@ function generateLayout(title, content, bodyClass = '', canonicalUrl = '', socia
 <body${bodyClass ? ` class="${bodyClass}"` : ''}>
     <header id="site-header">
         <a href="/"><h2>${config.name}</h2></a>
-        <a href="/"><img src="${config.logo}"></a>
+        <a href="/"><img alt='mijnrealiteit logo' src="${config.logo}"></a>
     </header>
     <div id="main">
         <div id="content">
@@ -252,7 +252,8 @@ function getArticles() {
                 title: attributes.title,
                 date: moment(attributes.date),
                 slug: dir,
-                url: `/articles/${dir}/`
+                url: `/articles/${dir}/`,
+                featured: attributes.featured || false
             });
         }
     });
@@ -327,13 +328,25 @@ function buildMainPage() {
     </div>`;
 
     const articles = getArticles();
+    const featuredArticles = articles.filter(article => article.featured);
+    const featuredList = featuredArticles.map(article => `<li><a href="${article.url}">${article.date.format('YYYY-MM-DD')} - ${article.title}</a></li>`).join('');
     const articlesList = articles.map(article => `<li><a href="${article.url}">${article.date.format('YYYY-MM-DD')} - ${article.title}</a></li>`).join('');
 
     const mainContent = `
         <article class="article">
             <section class="content">${typogr.typogrify(aboutContent)}</section>
+            ${featuredArticles.length > 0 ? `
             <section class="article-list">
-                <h2 class='center'>Photos</h2>
+                <h2 class='center'>highlighted</h2>
+                <nav>
+                    <ul>
+                        ${featuredList}
+                    </ul>
+                </nav>
+            </section>
+            ` : ''}
+            <section class="article-list">
+                <h2 class='center'>all stories</h2>
                 <nav>
                     <ul>
                         ${articlesList}
@@ -434,7 +447,7 @@ async function buildArticles() {
                 </section>
             </article>
             <footer class="article-footer text">
-                <p class="center"><a href="/">more photos</a></p>
+                <p class="center"><a href="/">other stories</a></p>
             </footer>
         `;
         
