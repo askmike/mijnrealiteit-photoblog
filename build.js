@@ -337,7 +337,7 @@ function buildMainPage() {
             <section class="content">${typogr.typogrify(aboutContent)}</section>
             ${featuredArticles.length > 0 ? `
             <section class="article-list">
-                <h2 class='center'>highlighted</h2>
+                <h2 class='center'>highlights</h2>
                 <nav>
                     <ul>
                         ${featuredList}
