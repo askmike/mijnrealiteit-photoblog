@@ -28,7 +28,7 @@ const config = {
     url: 'https://mijnrealiteit.nl/',
     name: 'mijnrealiteit',
     owner: 'Mike van Rossum',
-    description: 'Mike \'s Photoblog',
+    description: 'Mike\'s Photoblog',
     logo: '/static/logo.svg',
     domain: 'mijnrealiteit.nl'
 };
@@ -37,6 +37,9 @@ const config = {
 const RAW_ARTICLES = 'raw_articles';
 const STATIC = 'static';
 const BUILD = 'build';
+
+// Image cache file
+const IMAGE_CACHE_FILE = 'image-cache.json';
 
 // Global variable to store the CSS filename with hash
 let cssFilename = 'main.css';
@@ -247,13 +250,49 @@ function getArticles() {
         const indexPath = path.join(RAW_ARTICLES, dir, 'index.md');
         if (fs.existsSync(indexPath)) {
             const content = fs.readFileSync(indexPath, 'utf8');
-            const { attributes } = frontMatter(content);
+            const { attributes, body } = frontMatter(content);
+            
+            // Get article images for featured image fallback
+            const articleDir = path.join(RAW_ARTICLES, dir);
+            const files = fs.readdirSync(articleDir);
+            const imageFiles = files.filter(file => 
+                file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.png') || file.endsWith('.gif')
+            );
+            
+            // Extract first image from markdown content, fallback to first image file
+            const firstImageFromContent = extractFirstImageFromMarkdown(body);
+            const firstImage = firstImageFromContent || (imageFiles.length > 0 ? imageFiles[0] : null);
+            
+            // Get image metadata (size and dimensions) for each image
+            const imageMetadata = imageFiles.map(imageFile => {
+                const imagePath = path.join(articleDir, imageFile);
+                try {
+                    const stats = fs.statSync(imagePath);
+                    return {
+                        filename: imageFile,
+                        size: stats.size,
+                        // We'll get dimensions in the RSS generation since we need ImageMagick
+                        path: imagePath
+                    };
+                } catch (error) {
+                    return {
+                        filename: imageFile,
+                        size: 0,
+                        path: imagePath
+                    };
+                }
+            });
+            
             articles.push({
                 title: attributes.title,
                 date: moment(attributes.date),
                 slug: dir,
                 url: `/articles/${dir}/`,
-                featured: attributes.featured || false
+                featured: attributes.featured || false,
+                description: extractDescriptionFromMarkdown(body, attributes.title),
+                image: firstImage,
+                images: imageFiles, // All images for multiple enclosures
+                imageMetadata: imageMetadata // Image metadata for enclosures
             });
         }
     });
@@ -272,8 +311,9 @@ async function processImage(sourcePath, targetPath, articleName, imageFileName) 
         }
 
         // Get image dimensions using ImageMagick
-        const { stdout } = await execAsync(`identify -format "%w" "${sourcePath}"`);
-        const width = parseInt(stdout.trim());
+        const { stdout } = await execAsync(`identify -format "%wx%h" "${sourcePath}"`);
+        const [width, height] = stdout.trim().split('x').map(Number);
+        const dimensions = { width, height };
         
         if (width < MAX_WIDTH) {
             // Image is small enough, just copy
@@ -286,11 +326,25 @@ async function processImage(sourcePath, targetPath, articleName, imageFileName) 
             const finalCmd = STRIP_METADATA ? `${resizeCmd} -strip` : resizeCmd;
             await execAsync(`${finalCmd} "${targetPath}"`);
         }
+        
+        // Update cache with dimensions and file size
+        const stats = fs.statSync(targetPath);
+        updateImageCache(articleName, imageFileName, targetPath, dimensions, stats.size);
+        
     } catch (error) {
         console.error(`Error processing ${imageFileName}:`, error.message);
         // Fallback: just copy the file
         console.log(`\tFALLBACK: copying ${articleName} ${imageFileName}`);
         fs.copyFileSync(sourcePath, targetPath);
+        
+        // Try to get dimensions for cache even in fallback case
+        try {
+            const dimensions = await getImageDimensions(targetPath);
+            const stats = fs.statSync(targetPath);
+            updateImageCache(articleName, imageFileName, targetPath, dimensions, stats.size);
+        } catch (cacheError) {
+            console.warn(`Could not cache dimensions for ${imageFileName}:`, cacheError.message);
+        }
     }
 }
 
@@ -391,6 +445,31 @@ function addTextClassToParagraphs(html) {
     });
 }
 
+// Add width and height attributes to image tags using cached dimensions
+function addImageDimensions(html, articleSlug) {
+    return html.replace(/<img([^>]*?)src="([^"]*?)"([^>]*?)>/gi, (match, beforeSrc, src, afterSrc) => {
+        // Extract filename from src
+        const filename = src.split('/').pop();
+        
+        // Get cached dimensions
+        const cachedDimensions = getCachedImageDimensions(articleSlug, filename, '');
+        
+        if (cachedDimensions && cachedDimensions.width > 0 && cachedDimensions.height > 0) {
+            // Check if width/height already exist
+            const hasWidth = /width\s*=/i.test(beforeSrc + afterSrc);
+            const hasHeight = /height\s*=/i.test(beforeSrc + afterSrc);
+            
+            if (!hasWidth && !hasHeight) {
+                // Add width and height attributes
+                return `<img${beforeSrc}src="${src}" width="${cachedDimensions.width}" height="${cachedDimensions.height}"${afterSrc}>`;
+            }
+        }
+        
+        // Return original if no dimensions found or already has dimensions
+        return match;
+    });
+}
+
 // Build individual articles
 async function buildArticles() {
     console.log('Building articles...');
@@ -410,8 +489,11 @@ async function buildArticles() {
         // Add class to text paragraphs (not image-only paragraphs)
         const withTextClasses = addTextClassToParagraphs(processedContent);
         
+        // Add width and height attributes to image tags
+        const withImageDimensions = addImageDimensions(withTextClasses, article.slug);
+        
         // Apply typography improvements
-        const finalContent = typogr.typogrify(withTextClasses);
+        const finalContent = typogr.typogrify(withImageDimensions);
         
         // Process and copy article images
         const articleDir = path.join(RAW_ARTICLES, article.slug);
@@ -477,25 +559,158 @@ async function buildArticles() {
     }
 }
 
+// Get image dimensions using ImageMagick
+async function getImageDimensions(imagePath) {
+    try {
+        const { stdout } = await execAsync(`identify -format "%wx%h" "${imagePath}"`);
+        const [width, height] = stdout.trim().split('x').map(Number);
+        return { width, height };
+    } catch (error) {
+        return { width: 0, height: 0 };
+    }
+}
+
+// Image dimension cache management
+function loadImageCache() {
+    try {
+        if (fs.existsSync(IMAGE_CACHE_FILE)) {
+            const cacheData = fs.readFileSync(IMAGE_CACHE_FILE, 'utf8');
+            return JSON.parse(cacheData);
+        }
+    } catch (error) {
+        console.warn('Warning: Could not load image cache, starting fresh:', error.message);
+    }
+    
+    return {
+        version: '1.0',
+        lastUpdated: new Date().toISOString(),
+        images: {}
+    };
+}
+
+function saveImageCache(cache) {
+    try {
+        cache.lastUpdated = new Date().toISOString();
+        fs.writeFileSync(IMAGE_CACHE_FILE, JSON.stringify(cache, null, 2));
+    } catch (error) {
+        console.error('Error saving image cache:', error.message);
+    }
+}
+
+function getImageCacheKey(articleSlug, imageFilename) {
+    return `articles/${articleSlug}/${imageFilename}`;
+}
+
+function getCachedImageDimensions(articleSlug, imageFilename, imagePath) {
+    const cache = loadImageCache();
+    const cacheKey = getImageCacheKey(articleSlug, imageFilename);
+    const cachedImage = cache.images[cacheKey];
+    
+    if (!cachedImage) {
+        return null;
+    }
+    
+    // For RSS generation, we need to check the processed image file, not the raw one
+    const processedImagePath = path.join(BUILD, 'articles', articleSlug, imageFilename);
+    
+    // Check if the processed file has been modified since last cache update
+    try {
+        const stats = fs.statSync(processedImagePath);
+        const fileModified = stats.mtime.toISOString();
+        
+        if (cachedImage.lastModified !== fileModified) {
+            // File has been modified, cache is stale
+            return null;
+        }
+        
+        return {
+            width: cachedImage.width,
+            height: cachedImage.height,
+            size: cachedImage.size
+        };
+    } catch (error) {
+        // File doesn't exist or can't be accessed
+        return null;
+    }
+}
+
+function updateImageCache(articleSlug, imageFilename, imagePath, dimensions, fileSize) {
+    const cache = loadImageCache();
+    const cacheKey = getImageCacheKey(articleSlug, imageFilename);
+    
+    try {
+        const stats = fs.statSync(imagePath);
+        const fileModified = stats.mtime.toISOString();
+        
+        cache.images[cacheKey] = {
+            width: dimensions.width,
+            height: dimensions.height,
+            size: fileSize,
+            lastModified: fileModified,
+            processed: true
+        };
+        
+        saveImageCache(cache);
+        console.log(`\tCACHED dimensions for ${articleSlug}/${imageFilename}`);
+    } catch (error) {
+        console.warn(`Warning: Could not update cache for ${imageFilename}:`, error.message);
+    }
+}
+
 // Generate RSS feed
-function generateRSSFeed() {
+async function generateRSSFeed() {
     console.log('Generating RSS feed...');
     
     const articles = getArticles();
+    
+    // Process image metadata for all articles using cache when possible
+    const articlesWithMetadata = await Promise.all(articles.map(async (article) => {
+        const processedImages = await Promise.all(article.imageMetadata.map(async (imageMeta) => {
+            // Try to get dimensions from cache first
+            const cachedDimensions = getCachedImageDimensions(article.slug, imageMeta.filename, imageMeta.path);
+            
+            if (cachedDimensions) {
+                console.log(`\tUsing cached dimensions for ${article.slug}/${imageMeta.filename}`);
+                return {
+                    ...imageMeta,
+                    ...cachedDimensions
+                };
+            } else {
+                // Fallback to ImageMagick if not in cache
+                console.log(`\tGetting dimensions from ImageMagick for ${article.slug}/${imageMeta.filename}`);
+                const dimensions = await getImageDimensions(imageMeta.path);
+                return {
+                    ...imageMeta,
+                    ...dimensions
+                };
+            }
+        }));
+        
+        return {
+            ...article,
+            imageMetadata: processedImages
+        };
+    }));
+    
     const rssContent = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
     <channel>
         <title>${config.name}</title>
         <link>${config.url}</link>
         <description>${config.description}</description>
         <language>en</language>
         <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-        ${articles.map(article => `
+        ${articlesWithMetadata.map(article => `
         <item>
             <title>${article.title}</title>
             <link>${config.url}articles/${article.slug}/</link>
             <guid>${config.url}articles/${article.slug}/</guid>
             <pubDate>${article.date.toDate().toUTCString()}</pubDate>
+            <description><![CDATA[${article.description}]]></description>
+            <author>${config.owner}</author>
+            ${article.imageMetadata.map(imageMeta => 
+                `<media:content url="${config.url}articles/${article.slug}/${imageMeta.filename}" type="image/jpeg" medium="image" fileSize="${imageMeta.size}"${imageMeta.width > 0 ? ` width="${imageMeta.width}" height="${imageMeta.height}"` : ''} />`
+            ).join('')}
         </item>`).join('')}
     </channel>
 </rss>`;
@@ -514,7 +729,7 @@ async function build() {
         copyStaticAssets();
         buildMainPage();
         await buildArticles();
-        generateRSSFeed();
+        await generateRSSFeed();
         
         console.log('Build completed successfully!');
     } catch (error) {
