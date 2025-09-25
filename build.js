@@ -445,30 +445,6 @@ function addTextClassToParagraphs(html) {
     });
 }
 
-// Add width and height attributes to image tags using cached dimensions
-function addImageDimensions(html, articleSlug) {
-    return html.replace(/<img([^>]*?)src="([^"]*?)"([^>]*?)>/gi, (match, beforeSrc, src, afterSrc) => {
-        // Extract filename from src
-        const filename = src.split('/').pop();
-        
-        // Get cached dimensions
-        const cachedDimensions = getCachedImageDimensions(articleSlug, filename, '');
-        
-        if (cachedDimensions && cachedDimensions.width > 0 && cachedDimensions.height > 0) {
-            // Check if width/height already exist
-            const hasWidth = /width\s*=/i.test(beforeSrc + afterSrc);
-            const hasHeight = /height\s*=/i.test(beforeSrc + afterSrc);
-            
-            if (!hasWidth && !hasHeight) {
-                // Add width and height attributes
-                return `<img${beforeSrc}src="${src}" width="${cachedDimensions.width}" height="${cachedDimensions.height}"${afterSrc}>`;
-            }
-        }
-        
-        // Return original if no dimensions found or already has dimensions
-        return match;
-    });
-}
 
 // Build individual articles
 async function buildArticles() {
@@ -489,11 +465,8 @@ async function buildArticles() {
         // Add class to text paragraphs (not image-only paragraphs)
         const withTextClasses = addTextClassToParagraphs(processedContent);
         
-        // Add width and height attributes to image tags
-        const withImageDimensions = addImageDimensions(withTextClasses, article.slug);
-        
         // Apply typography improvements
-        const finalContent = typogr.typogrify(withImageDimensions);
+        const finalContent = typogr.typogrify(withTextClasses);
         
         // Process and copy article images
         const articleDir = path.join(RAW_ARTICLES, article.slug);
@@ -670,7 +643,6 @@ async function generateRSSFeed() {
             const cachedDimensions = getCachedImageDimensions(article.slug, imageMeta.filename, imageMeta.path);
             
             if (cachedDimensions) {
-                console.log(`\tUsing cached dimensions for ${article.slug}/${imageMeta.filename}`);
                 return {
                     ...imageMeta,
                     ...cachedDimensions
