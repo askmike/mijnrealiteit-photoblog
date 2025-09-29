@@ -113,7 +113,7 @@ function copyStaticAssets() {
 }
 
 // Generate HTML for the main layout
-function generateLayout(title, content, bodyClass = '', canonicalUrl = '', socialMeta = {}) {
+function generateLayout(title, content, bodyClass = '', canonicalUrl = '', socialMeta = {}, isHomepage = false) {
     // Default social media metadata
     const defaultMeta = {
         title: title,
@@ -165,14 +165,14 @@ function generateLayout(title, content, bodyClass = '', canonicalUrl = '', socia
             ${content}
         </div>
     </div>
-    <script>
+    ${isHomepage ? `<script>
     const contact = 'bW' + 'LQBN'.toLowerCase() + 'JlYWxpdGVpdEBtdnIubWU=';
     window.onload = () => {
       const link = document.getElementById('email')
       const emailAddress = atob(contact);
       link.href = 'mailto:' + emailAddress;
     }
-  </script>
+  </script>` : ''}
 
 </body>
 </html>`;
@@ -414,7 +414,7 @@ function buildMainPage() {
         image: config.logo,
         type: 'website',
         url: config.url
-    });
+    }, true);
     
     fs.writeFileSync(path.join(BUILD, 'index.html'), html);
 }
@@ -506,7 +506,7 @@ async function buildArticles() {
             </footer>
         `;
         
-        const html = generateLayout(`${article.title} - ${config.name}`, articleContent, 'article-detail', `${config.url}articles/${article.slug}/`, socialMeta);
+        const html = generateLayout(`${article.title} - ${config.name}`, articleContent, 'article-detail', `${config.url}articles/${article.slug}/`, socialMeta, false);
         
         // Create article directory in build
         const articleBuildDir = path.join(BUILD, 'articles', article.slug);
