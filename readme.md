@@ -65,7 +65,7 @@ This runs the full pipeline: build (image processing, website rendering) → dep
 
 The system automatically processes images:
 - High-resolution images from `raw_articles/` are resized and optimized in a few different variants (of different dimensions and web image formats)
-- Images wider than 2000px are automatically resized
+- Images wider than 2200px are automatically resized
 
 ## File Structure
 
