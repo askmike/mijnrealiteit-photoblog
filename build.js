@@ -341,6 +341,9 @@ async function generateImageVariants(sourcePath, destDir, articleSlug, imageFile
         }
 
         const baseName = path.parse(imageFileName).name; // without extension
+        // Use current timestamp for cache-busting hash since we're generating new variants
+        const currentTimestamp = new Date().toISOString();
+        const cacheBustingHash = generateCacheBustingHash(currentTimestamp);
         const variants = {};
 
         // If not forcing and cache already has all target widths and formats, skip entirely
@@ -360,7 +363,7 @@ async function generateImageVariants(sourcePath, destDir, articleSlug, imageFile
             variants[width] = {};
 
             // JPG
-            const jpgName = `${baseName}-${width}.jpg`;
+            const jpgName = `${baseName}-${width}${cacheBustingHash}.jpg`;
             const jpgPath = path.join(destDir, jpgName);
             if (FORCE_OVERWRITE || !(cached && cached.variants && cached.variants[width] && cached.variants[width].jpg)) {
                 const jpgCmd = `convert "${sourcePath}" -resize ${width}x -quality ${JPEG_QUALITY} ${STRIP_METADATA ? '-strip ' : ''}"${jpgPath}"`;
@@ -384,7 +387,7 @@ async function generateImageVariants(sourcePath, destDir, articleSlug, imageFile
             };
 
             // WEBP
-            const webpName = `${baseName}-${width}.webp`;
+            const webpName = `${baseName}-${width}${cacheBustingHash}.webp`;
             const webpPath = path.join(destDir, webpName);
             if (FORCE_OVERWRITE || !(cached && cached.variants && cached.variants[width] && cached.variants[width].webp)) {
                 const webpCmd = `convert "${sourcePath}" -resize ${width}x -quality ${WEBP_QUALITY} ${STRIP_METADATA ? '-strip ' : ''}"${webpPath}"`;
@@ -400,7 +403,7 @@ async function generateImageVariants(sourcePath, destDir, articleSlug, imageFile
             };
 
             // AVIF
-            const avifName = `${baseName}-${width}.avif`;
+            const avifName = `${baseName}-${width}${cacheBustingHash}.avif`;
             const avifPath = path.join(destDir, avifName);
             if (FORCE_OVERWRITE || !(cached && cached.variants && cached.variants[width] && cached.variants[width].avif)) {
                 const avifCmd = `convert "${sourcePath}" -resize ${width}x -quality ${AVIF_QUALITY} ${STRIP_METADATA ? '-strip ' : ''}"${avifPath}"`;
@@ -662,6 +665,16 @@ async function getImageDimensions(imagePath) {
     } catch (error) {
         return { width: 0, height: 0 };
     }
+}
+
+// Generate cache-busting hash from lastModified timestamp
+function generateCacheBustingHash(lastModified) {
+    if (!lastModified) {
+        return '';
+    }
+    // Create a short hash from the timestamp for cache busting
+    const hash = crypto.createHash('md5').update(lastModified).digest('hex').substring(0, 8);
+    return `-${hash}`;
 }
 
 // Image dimension cache management
