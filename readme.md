@@ -4,7 +4,7 @@ This is the code behind my photoblog [mijnrealiteit](https://mijnrealiteit.nl).
 
 ## How It Works
 
-The photoblog uses a simple static site generator built with plain JavaScript. Here's how it works:
+The photoblog uses a simple static site generator to generate the blog (with RSS feed) and optimize all images for web.
 
 ### Directory Structure
 ```
@@ -64,7 +64,7 @@ This runs the full pipeline: build (image processing, website rendering) → dep
 ## Image Processing
 
 The system automatically processes images:
-- High-resolution images from `raw_articles/` are resized and optimized
+- High-resolution images from `raw_articles/` are resized and optimized in a few different variants (of different dimensions and web image formats)
 - Images wider than 2000px are automatically resized
 
 ## File Structure
